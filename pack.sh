@@ -4,9 +4,17 @@
 EXT=jpg
 #-----------
 
-work_dir="$(/usr/bin/dirname $0)/$1"
+while getopts "d" OPT
+do
+	case $OPT in
+		d)	# Dry Run
+			dryrun=true
+			;;
+	esac
+done
+shift $((OPTIND - 1))
 
-cd "$work_dir"
+cd "$1"
 
 files=($(/bin/ls *.$EXT))
 num=($(/usr/bin/seq -w 001 ${#files[@]}))
@@ -15,7 +23,12 @@ num=($(/usr/bin/seq -w 001 ${#files[@]}))
 prefix=${files[0]%_*}
 
 for (( i=0; i<${#files[@]}; i++ )); do
-	/bin/echo ${files[$i]} "->" ${prefix}_${num[$i]}.${EXT}
+	if [[ $dryrun == "true" ]]; then
+		/bin/echo ${files[$i]} ${prefix}_${num[$i]}.${EXT}
+	else
+		/bin/mv ${files[$i]} ${prefix}_${num[$i]}.${EXT}
+		echo packed!
+	fi
 done
 
 
