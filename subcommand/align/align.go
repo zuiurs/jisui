@@ -24,10 +24,15 @@ var (
 
 func Run(args []string) error {
 	f := flag.NewFlagSet("align", flag.ExitOnError)
-	f.StringVar(&alignE, "e", "jpg", "set target file extension")
+	f.StringVar(&alignE, "e", "jpg", "set target file `extension`")
 	f.BoolVar(&alignV, "v", false, "verbose output")
-	f.BoolVar(&alignD, "d", false, "dry-run (this option isn't execute)")
+	f.BoolVar(&alignD, "d", false, "dry-run (not execute rename, but execute clean depending on your operation)")
 	f.Parse(args)
+
+	if len(f.Args()) == 0 {
+		f.Usage()
+		return nil
+	}
 
 	// TODO: prepare test
 	// MAR_1_001.jpg -> ok
