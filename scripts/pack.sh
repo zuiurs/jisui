@@ -27,8 +27,7 @@ for (( i=0; i<${#files[@]}; i++ )); do
 		/bin/echo ${files[$i]} ${prefix}_${num[$i]}.${EXT}
 	else
 		/bin/mv ${files[$i]} ${prefix}_${num[$i]}.${EXT}
-		echo packed!
 	fi
 done
 
-
+echo packed!
