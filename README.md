@@ -1,10 +1,67 @@
-# jisui-tools
+# jisui
 
-自炊用のシェルスクリプト．
+自炊した画像を処理するためのツールです．
+
+## Prerequisites
+
+- Docker
+  - Windows, Mac 環境では必ず使います
+  - Linux では Go Imagick v2 が動く環境であればビルド可能です
+    - CentOS とかではデフォルトで v1 用のライブラリが入るため面倒です
+
+## Installation
+
+Clone repository (not `go get`).
+
+```
+git clone https://github.com/zuiurs/jisui.git
+```
+
+Building container.
+
+```
+cd jisui
+make container
+```
+
+## Usage
+
+Docker コンテナで動かすことを想定しているため若干使い方が特殊です．
+
+クローンしたリポジトリに適当なデータ置き場を作成します．
+
+```
+mkdir work
+# copy your comic data to work
+```
+
+コンテナを起動してその中で作業します．
+
+```
+make run
+```
+
+起動時に行われる作業は下記になります．起動直後からすぐ最新のコマンドが使えるようになっています．
+
+- 現在のディレクトリのマウント
+- ソースコードのコンパイル & インストール
+- マウントポイントでの bash 起動
+
+あとは普通に使ってください．
+
+```
+jisui
+```
+
+## About /scripts
+
+昔使っていた自炊用のシェルスクリプトです．Go のツールがあるため今はほとんど使いませんし，メンテもしたくないです．
+
+ImageMagick を実行できる環境が必要です．
 
 基本的に原本はカラーの最高画質，圧縮なしで取り込み，あとからこのスクリプト群で調整します．
 
-## pack.sh
+### pack.sh
 
 下記のフォーマットの連番で管理されているファイルの番号を切り詰めます．
 
@@ -16,7 +73,7 @@
 
 両面で取り込んで表紙とかの裏の白紙を削除した時に，これで切り詰めます．
 
-## gray.sh
+### gray.sh
 
 グレースケールに変換します．
 
