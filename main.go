@@ -23,6 +23,7 @@ The commands are:
 `
 
 func init() {
+	fmt.Println("hello")
 	subcommand.Commands = []*subcommand.Command{
 		align.CmdAlign,
 		comic.CmdComic,

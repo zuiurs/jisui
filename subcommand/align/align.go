@@ -94,8 +94,9 @@ func Run(args []string) error {
 	return nil
 }
 
+// path 以下の re にマッチしないファイルを削除する
 func cleanDirectory(path string, re *regexp.Regexp) error {
-	fis, err := ioutil.ReadDir(path) // sorted by name already
+	fis, err := ioutil.ReadDir(path) // fis is sorted by name already
 	if err != nil {
 		return err
 	}
