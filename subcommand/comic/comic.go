@@ -31,9 +31,9 @@ var (
 func Run(args []string) error {
 	f := flag.NewFlagSet("comic", flag.ExitOnError)
 	f.BoolVar(&comicV, "v", false, "verbose output")
-	f.StringVar(&comicO, "o", "-", "output destination")
-	f.Float64Var(&comicBP, "bp", BP, fmt.Sprintf("set leveling black point (default %f)", BP))
-	f.Float64Var(&comicWP, "wp", WP, fmt.Sprintf("set leveling white point (default %f)", WP))
+	f.StringVar(&comicO, "o", "-", "set output destination")
+	f.Float64Var(&comicBP, "bp", BP, "set leveling black point")
+	f.Float64Var(&comicWP, "wp", WP, "set leveling white point")
 	f.BoolVar(&comicOverwrite, "overwrite", false, "overwrite the file or directory")
 	f.Parse(args)
 
