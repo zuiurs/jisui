@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/zuiurs/jisui/subcommand"
-	"github.com/zuiurs/jisui/subcommand/align"
 	"github.com/zuiurs/jisui/subcommand/comic"
+	"github.com/zuiurs/jisui/subcommand/prepare"
 )
 
 var usage = `jisui is a tool for processing scanned books.
@@ -18,13 +18,13 @@ Usage:
 
 The commands are:
 
-	align	rename all image files consecutive number
+	prepare	rename as consecutive number and remove unnecessary files
 	comic	convert image files for a comic
 `
 
 func init() {
 	subcommand.Commands = []*subcommand.Command{
-		align.CmdAlign,
+		prepare.CmdPrepare,
 		comic.CmdComic,
 	}
 }

@@ -1,4 +1,4 @@
-package align
+package prepare
 
 import (
 	"bufio"
@@ -11,22 +11,22 @@ import (
 	"regexp"
 )
 
-var CmdAlign = &subcommand.Command{
-	Name: "align",
+var CmdPrepare = &subcommand.Command{
+	Name: "prepare",
 	Run:  Run,
 }
 
 var (
-	alignV bool
-	alignD bool
-	alignE string
+	prepareV bool
+	prepareD bool
+	prepareE string
 )
 
 func Run(args []string) error {
-	f := flag.NewFlagSet("align", flag.ExitOnError)
-	f.StringVar(&alignE, "e", "jpg", "set target file `extension`")
-	f.BoolVar(&alignV, "v", false, "verbose output")
-	f.BoolVar(&alignD, "d", false, "dry-run (not execute rename, but execute clean depending on your operation)")
+	f := flag.NewFlagSet("prepare", flag.ExitOnError)
+	f.StringVar(&prepareE, "e", "jpg", "set target file `extension`")
+	f.BoolVar(&prepareV, "v", false, "verbose output")
+	f.BoolVar(&prepareD, "d", false, "dry-run (not execute rename, but execute clean depending on your operation)")
 	f.Parse(args)
 
 	if len(f.Args()) == 0 {
@@ -40,7 +40,7 @@ func Run(args []string) error {
 	// MAR_001_hoge.jpg -> ng
 	// MAR_01.jpg -> ng
 	// MAR_001.foo -> ng
-	re, err := regexp.Compile(`(.*)_[0-9]{3}\.` + alignE)
+	re, err := regexp.Compile(`(.*)_[0-9]{3}\.` + prepareE)
 	if err != nil {
 		return err
 	}
@@ -81,11 +81,11 @@ func Run(args []string) error {
 			}
 
 			src := fmt.Sprintf("%s/%s", path, fi.Name())
-			dest := fmt.Sprintf("%s/%s_%03d.%s", path, prefix, i+1, alignE)
-			if !alignD && src != dest {
+			dest := fmt.Sprintf("%s/%s_%03d.%s", path, prefix, i+1, prepareE)
+			if !prepareD && src != dest {
 				os.Rename(src, dest)
 			}
-			if (alignD || alignV) && src != dest {
+			if (prepareD || prepareV) && src != dest {
 				fmt.Printf("%s -> %s\n", src, dest)
 			}
 		}
