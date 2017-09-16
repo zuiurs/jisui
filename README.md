@@ -99,6 +99,12 @@ jisui comic -pack -h 1200 example
 jisui comic -pack -h 1200 -o example_resized.pdf example
 ```
 
+`example` ディレクトリの中を一枚ずつ iPad Air2 の縦に合わせてリサイズしつつ、指定ページ番号はモノクロ化せずに `example_resized.pdf` として PDF 化します。
+
+```
+jisui comic -h 1536 -pack -skip 1,2,20-24 -o example_resized.pdf example
+```
+
 ## Routine
 
 自炊の流れを書いておきます．

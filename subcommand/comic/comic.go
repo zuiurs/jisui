@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -31,6 +32,9 @@ var (
 	comicWP        float64
 	comicPack      bool
 	comicOverwrite bool
+	comicSkip      string
+
+	skipList []int
 )
 
 func Run(args []string) error {
@@ -43,6 +47,7 @@ func Run(args []string) error {
 	f.Float64Var(&comicWP, "wp", WP, "set leveling white point")
 	f.BoolVar(&comicPack, "pack", false, "packing images to PDF")
 	f.BoolVar(&comicOverwrite, "overwrite", false, "overwrite the file or directory")
+	f.StringVar(&comicSkip, "skip", "", "set number of image skipping monochrome process (for color page)")
 	f.Parse(args)
 
 	if len(f.Args()) == 0 {
@@ -57,6 +62,16 @@ func Run(args []string) error {
 		return fmt.Errorf(`option "pack" and "overwrite" is exclusive`)
 	}
 	comicO = strings.TrimRight(comicO, "/")
+
+	// skip パース処理
+	var err error
+	skipList, err = parseSkipList(comicSkip)
+	if err != nil {
+		return err
+	}
+	if comicV {
+		fmt.Printf("Skip Image Index: %v\n", skipList)
+	}
 
 	imagick.Initialize()
 	defer imagick.Terminate()
@@ -86,6 +101,34 @@ func Run(args []string) error {
 	return nil
 }
 
+func parseSkipList(str string) ([]int, error) {
+	result := make([]int, 0, 10)
+	s := strings.Split(str, ",")
+	for _, v := range s {
+		if strings.ContainsAny(v, "-") {
+			r := strings.Split(v, "-")
+			fromIdx, err := strconv.Atoi(r[0])
+			if err != nil {
+				return nil, err
+			}
+			toIdx, err := strconv.Atoi(r[1])
+			if err != nil {
+				return nil, err
+			}
+			for i := fromIdx; i <= toIdx; i++ {
+				result = append(result, i)
+			}
+		} else {
+			idx, err := strconv.Atoi(v)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, idx)
+		}
+	}
+	return result, nil
+}
+
 func processSingleFile(srcPath string) error {
 	var err error
 
@@ -94,7 +137,7 @@ func processSingleFile(srcPath string) error {
 		return err
 	}
 
-	if err = processImage(mw); err != nil {
+	if err = processImage(mw, false); err != nil {
 		return err
 	}
 
@@ -130,12 +173,24 @@ func processDirectory(srcPath string) error {
 
 	if comicPack {
 		mw := imagick.NewMagickWand()
-		for _, fi := range fis {
+		for i, fi := range fis {
+			if comicV {
+				fmt.Printf("%s processing...\n", fi.Name())
+			}
+
 			if err = mw.ReadImage(srcPath + "/" + fi.Name()); err != nil {
 				return err
 			}
 
-			if err = processImage(mw); err != nil {
+			// skipList に入っていたらモノクロ化しない
+			// skipList の値は 1 起算を考慮
+			isSkip := false
+			for _, v := range skipList {
+				if v == i+1 {
+					isSkip = true
+				}
+			}
+			if err = processImage(mw, isSkip); err != nil {
 				return err
 			}
 
@@ -162,13 +217,23 @@ func processDirectory(srcPath string) error {
 			}
 		}
 	} else {
-		for _, fi := range fis {
+		for i, fi := range fis {
+			if comicV {
+				fmt.Printf("%s processing...\n", fi.Name())
+			}
+
 			mw := imagick.NewMagickWand()
 			if err = mw.ReadImage(srcPath + "/" + fi.Name()); err != nil {
 				return err
 			}
 
-			if err = processImage(mw); err != nil {
+			isSkip := false
+			for _, v := range skipList {
+				if v == i+1 {
+					isSkip = true
+				}
+			}
+			if err = processImage(mw, isSkip); err != nil {
 				return err
 			}
 
@@ -205,31 +270,39 @@ func processDirectory(srcPath string) error {
 	return nil
 }
 
-// - モノクロ化
-// - 拡張子の変更
-// - イメージのリサイズ
-func processImage(mw *imagick.MagickWand) error {
+func processImage(mw *imagick.MagickWand, monoSkip bool) error {
 	var err error
-	if err = monochrome(mw, comicBP, comicWP); err != nil {
+	if !monoSkip {
+		if err = monochromeImage(mw, comicBP, comicWP); err != nil {
+			return err
+		}
+	}
+	if err = resizeImage(mw); err != nil {
 		return err
 	}
 
+	return nil
+
+}
+
+// - イメージのリサイズ
+// - 拡張子の変更
+func resizeImage(mw *imagick.MagickWand) error {
+	var err error
 	if err = mw.SetImageFormat(comicE); err != nil {
 		return err
 	}
 
 	var h, w uint
 	if comicH < 0 {
-		h = mw.GetImageHeight()
-		w = mw.GetImageWidth()
+		return nil
 	} else {
 		h = uint(comicH)
 		w = uint((float64(h) / float64(mw.GetImageHeight())) * float64(mw.GetImageWidth()))
 	}
 
 	if comicV {
-		fmt.Printf("SRC Image size: %d x %d\n", mw.GetImageWidth(), mw.GetImageHeight())
-		fmt.Printf("DST Image size: %d x %d\n", w, h)
+		fmt.Printf("Image size: %d x %d(SRC) -> %d x %d(DST)\n", mw.GetImageWidth(), mw.GetImageHeight(), w, h)
 	}
 
 	if err = mw.ResizeImage(w, h, imagick.FILTER_MITCHELL, 1); err != nil { // 0 is sharp
@@ -237,11 +310,13 @@ func processImage(mw *imagick.MagickWand) error {
 	}
 
 	return nil
+
 }
 
+// - モノクロ化
 // - Red Channel でグレースケール化
 // - 色レベル補正 (裏写り軽減、シャープネス化)
-func monochrome(mw *imagick.MagickWand, bp, wp float64) error {
+func monochromeImage(mw *imagick.MagickWand, bp, wp float64) error {
 	var err error
 	// remove yellow tint
 	if err = mw.SeparateImageChannel(imagick.CHANNEL_RED); err != nil {
