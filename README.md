@@ -61,6 +61,44 @@ make run
 jisui
 ```
 
+### Other usage
+
+`example.jpg` をカレントディレクトリの `example.png` として変換、保存します。
+
+```
+jisui comic example.jpg
+```
+
+`example.jpg` をカレントディレクトリの `example_resized.png` として Height が 1200 になるようにアス比を保ちつつ変換、保存します。
+
+```
+jisui comic -o example_resized.png -h 1200 example.jpg
+```
+
+`example` ディレクトリの中を一枚ずつ処理します。各ファイルの命名規則は ファイルの時の処理と同じです。
+
+```
+jisui comic example
+```
+
+`example` ディレクトリの中を一枚ずつ処理して `example_resized` ディレクトリに格納します。
+
+```
+jisui comic -o example_resized -h 1200 example
+```
+
+`example` ディレクトリの中を一枚ずつ処理した結果を `example.pdf` として PDF 化します。
+
+```
+jisui comic -pack -h 1200 example
+```
+
+`example` ディレクトリの中を一枚ずつ処理した結果を `example_resized.pdf` として PDF 化します。
+
+```
+jisui comic -pack -h 1200 -o example_resized.pdf example
+```
+
 ## Routine
 
 自炊の流れを書いておきます．
@@ -86,7 +124,7 @@ jisui
 
 7. 2. でスキャンした全体カバーと帯を適当に大きなナンバリングにして入れる
 
-8. `jisui align <directory>` でゴミ削除，ナンバリング調整をする
+8. `jisui prepare <directory>` でゴミ削除，ナンバリング調整をする
 
 この時点で Row なデータの取り込みは完了になります．コミカライズ用の手順は下記になります．
 
@@ -153,9 +191,37 @@ jisui
     - \[\*] [継続読み取りを有効にします\]
     - \[オプション\] は全てチェックを外す
 
+## Image Processing
+
+画像処理でやっていることを説明します。
+
+### jisui comic
+
+- 漫画の黄ばみを取り除くために Red Channel を抽出してグレースケール化します
+  - 濃いシミの点があったりしたときに効果的です (薄い時はレベル補正でだいたい消えます)
+- 色レベルを黒 `40%`、白 `85%` で補正します
+  - 色々変えてみて最終的に行き着いた値です
+  - 黒レベルを低くすると画像のシャープ感が得られません。高くするとトーンが必要以上に黒くなります
+  - 白レベルを低くするとルビが細くなりすぎて消える可能性があります。高くすると裏写りが消えません
+- 画像を Mitchell Filter でリサイズします
+  - Box と Mitchell で検証しましたが、前者の方が縮小した時のトーンが点々に見えて汚いです
+    - Mitchell はブラーの値を 1 以上にしないと結果が真っ黒になりますが、Box のブラー 0 はかなり汚いので 1 にしたときで比較しました
+  - Mitchell にした理由は上と、ここの AutoDesk のドキュメントで大体 Mitchell が良くなると書いてあったからです
+    - https://knowledge.autodesk.com/ja/support/3ds-max/learn-explore/caas/CloudHelp/cloudhelp/2017/JPN/3DSMax/files/GUID-DBFFF24F-5419-492B-8889-24E546029279-htm.html
+
+## TODO
+
+- ImageFormat の設定の見直し・検証
+  - `png`、`pdf` に変更するタイミングは適当？
+    - モノクロ化するときは未変更で、リサイズする時に `png` に変換している
+    - PDF 化する時に `pdf` に変換している
+  - やる必要はある？
+- ディレクトリ処理時に毎回 ImageWand を生成する必要はある？
+  - PDF みたいに `WriteImages()` の `adjoin` を `false` にしたら一枚一枚書き込んでくれる？ (未検証)
+
 ## About /scripts
 
-昔使っていた自炊用のシェルスクリプトです．Go のツールがあるため今はほとんど使いませんし，メンテもしたくないです．
+昔使っていた自炊用のシェルスクリプトです．Go のツールがあるため今はほとんど使いません．
 
 ImageMagick を実行できる環境が必要です．
 
