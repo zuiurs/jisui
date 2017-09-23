@@ -255,4 +255,7 @@ ImageMagick を実行できる環境が必要です．
 1. ヒストグラムの 90% を白とする (紙のノイズを除去)
 1. ヒストグラムの 35% を黒とする (ベタを黒塗りする)
 
+## License
+
+This software is released under the MIT License, see LICENSE.txt.
 
