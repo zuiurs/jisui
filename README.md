@@ -70,30 +70,30 @@ jisui
 色々省略していますが 20 巻の結果を見てください。`tail -n3` の上で 1 行しか出力されていないため、リネームされるのは 1  つだけであるということがわかります。本 README.md の手順に従ってスキャンをしていると表紙裏などの白紙ページの削除により番号ずれが生じるため、ほとんどのファイルがリネームされるはずなのでおかしいということがわかります。この例では白紙ページの削除し忘れが発覚しました。
 
 ```
-$ for i in $(seq 1 25); do echo -----------------------------------------------------------; jisui prepare -d Kirby-of-the-Stars_$i | tail -n3; done
------------------------------------------------------------
+$ for i in $(ls -1); do echo ---- $i ----; jisui prepare -d $i | tail -n3; done
+----Kirby-of-the-Stars_17----
 Kirby-of-the-Stars_17/Kirby-of-the-Stars_17_201.jpg -> Kirby-of-the-Stars_17/Kirby-of-the-Stars_17_197.jpg
 Kirby-of-the-Stars_17/Kirby-of-the-Stars_17_203.jpg -> Kirby-of-the-Stars_17/Kirby-of-the-Stars_17_198.jpg
 Kirby-of-the-Stars_17/Kirby-of-the-Stars_99_999.jpg -> Kirby-of-the-Stars_17/Kirby-of-the-Stars_17_199.jpg
------------------------------------------------------------
+----Kirby-of-the-Stars_18----
 Kirby-of-the-Stars_18/Kirby-of-the-Stars_18_201.jpg -> Kirby-of-the-Stars_18/Kirby-of-the-Stars_18_197.jpg
 Kirby-of-the-Stars_18/Kirby-of-the-Stars_18_203.jpg -> Kirby-of-the-Stars_18/Kirby-of-the-Stars_18_198.jpg
 Kirby-of-the-Stars_18/Kirby-of-the-Stars_99_999.jpg -> Kirby-of-the-Stars_18/Kirby-of-the-Stars_18_199.jpg
------------------------------------------------------------
+----Kirby-of-the-Stars_19----
 Kirby-of-the-Stars_19/Kirby-of-the-Stars_19_201.jpg -> Kirby-of-the-Stars_19/Kirby-of-the-Stars_19_197.jpg
 Kirby-of-the-Stars_19/Kirby-of-the-Stars_19_203.jpg -> Kirby-of-the-Stars_19/Kirby-of-the-Stars_19_198.jpg
 Kirby-of-the-Stars_19/Kirby-of-the-Stars_99_999.jpg -> Kirby-of-the-Stars_19/Kirby-of-the-Stars_19_199.jpg
------------------------------------------------------------
+----Kirby-of-the-Stars_20----
 Kirby-of-the-Stars_20/Kirby-of-the-Stars_99_999.jpg -> Kirby-of-the-Stars_20/Kirby-of-the-Stars_20_205.jpg
------------------------------------------------------------
+----Kirby-of-the-Stars_21----
 Kirby-of-the-Stars_21/Kirby-of-the-Stars_21_201.jpg -> Kirby-of-the-Stars_21/Kirby-of-the-Stars_21_197.jpg
 Kirby-of-the-Stars_21/Kirby-of-the-Stars_21_203.jpg -> Kirby-of-the-Stars_21/Kirby-of-the-Stars_21_198.jpg
 Kirby-of-the-Stars_21/Kirby-of-the-Stars_99_999.jpg -> Kirby-of-the-Stars_21/Kirby-of-the-Stars_21_199.jpg
------------------------------------------------------------
+----Kirby-of-the-Stars_22----
 Kirby-of-the-Stars_22/Kirby-of-the-Stars_22_201.jpg -> Kirby-of-the-Stars_22/Kirby-of-the-Stars_22_197.jpg
 Kirby-of-the-Stars_22/Kirby-of-the-Stars_22_203.jpg -> Kirby-of-the-Stars_22/Kirby-of-the-Stars_22_198.jpg
 Kirby-of-the-Stars_22/Kirby-of-the-Stars_99_999.jpg -> Kirby-of-the-Stars_22/Kirby-of-the-Stars_22_199.jpg
------------------------------------------------------------
+----Kirby-of-the-Stars_23----
 Kirby-of-the-Stars_23/Kirby-of-the-Stars_23_201.jpg -> Kirby-of-the-Stars_23/Kirby-of-the-Stars_23_197.jpg
 Kirby-of-the-Stars_23/Kirby-of-the-Stars_23_203.jpg -> Kirby-of-the-Stars_23/Kirby-of-the-Stars_23_198.jpg
 Kirby-of-the-Stars_23/Kirby-of-the-Stars_99_999.jpg -> Kirby-of-the-Stars_23/Kirby-of-the-Stars_23_199.jpg
@@ -102,7 +102,7 @@ Kirby-of-the-Stars_23/Kirby-of-the-Stars_99_999.jpg -> Kirby-of-the-Stars_23/Kir
 実際にリネームを実行します。
 
 ```
-jisui prepare Kirby-of-the-Stars_{1..25}
+for i in $(ls -1); do jisui prepare -d $i; done
 ```
 
 raw データとして tarball にします。フォルダ指定にするとページ番号がバラバラになってしまうため、アスタリスクで展開することで名前順にしています。
@@ -114,7 +114,7 @@ for i in $(ls -1); do tar cf $i.tar $i/*; done
 画像をモノクロにして PDF にします。skip するページ (カラーページ) は各漫画に合わせて設定してください。下記の例はカバー表紙、折込、裏折込、カバー裏表紙、表紙、裏表紙、全体カバーの 7 ページ分だけスキップしています。本の中盤で出てくるカラーページなどに注意してください。
 
 ```
-for i in $(ls -1); do total=$(ls -1 $i | wc -l); jisui comic -v -h 1536 -pack -skip 1,2,$((total-4))-$total -o $i.pdf $i; done
+for i in $(ls -1); do total=$(ls -1 $i | wc -l); jisui comic -v -h 1536 -pack -skip 1-2,$((total-4))-$total -o $i.pdf $i; done
 ```
 
 ### Convert
