@@ -9,6 +9,11 @@ RUN mkdir /go
 ENV GOPATH /go
 ENV PATH $PATH:$GOPATH/bin
 
+#### Workaround of failing compile ####
+# https://github.com/gographics/imagick/issues/155
+ENV CGO_CFLAGS_ALLOW -fopenmp
+#######################################
+
 RUN go get gopkg.in/gographics/imagick.v2/imagick
 
 ARG repodir="github.com/zuiurs/jisui"
