@@ -66,6 +66,13 @@ func TestGetDestImagePath(t *testing.T) {
 			false,
 			"/path/to/dir.pdf",
 		},
+		{
+			"/github.com/path/to/dir",
+			"",
+			"pdf",
+			false,
+			"/github.com/path/to/dir.pdf",
+		},
 	}
 
 	for i, tt := range tests {

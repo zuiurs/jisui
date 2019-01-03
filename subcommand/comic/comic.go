@@ -240,11 +240,14 @@ func getDestImagePath(srcPath, output, ext string, isDir bool) string {
 	var dstPath string
 
 	if output == "" {
-		pos := strings.LastIndex(srcPath, ".")
+		s := strings.Split(srcPath, "/")
+		filename := s[len(s)-1]
+
+		pos := strings.LastIndex(filename, ".")
 		if pos == -1 {
 			dstPath = srcPath + "." + ext
 		} else {
-			dstPath = srcPath[:pos+1] + ext
+			dstPath = strings.TrimRight(srcPath, filename) + filename[:pos+1] + ext
 		}
 	} else {
 		if isDir {
