@@ -144,25 +144,16 @@ func processSingleFile(srcPath string) error {
 		return err
 	}
 
+	dstPath := getDestImagePath(srcPath, comicO, comicE, false)
 	// write file
-	var dstPath string
-	if comicO == "" {
-		pos := strings.LastIndex(srcPath, ".")
-		if pos == -1 {
-			dstPath = srcPath + comicE
-		} else {
-			dstPath = srcPath[:pos+1] + comicE
-		}
-	} else if comicO == "-" {
+	if dstPath == "-" {
 		if err = mw.WriteImageFile(os.Stdout); err != nil {
 			return err
 		}
-		return nil
 	} else {
-		dstPath = comicO
-	}
-	if err = mw.WriteImage(dstPath); err != nil {
-		return err
+		if err = mw.WriteImage(dstPath); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -176,45 +167,30 @@ func processDirectory(srcPath string) error {
 
 	if comicPack {
 		mw := imagick.NewMagickWand()
+		mw.SetImageFormat("pdf")
+		dstPath := getDestImagePath(srcPath, comicO, "pdf", false)
+
 		for i, fi := range fis {
 			if comicV {
 				fmt.Printf("%s processing...\n", fi.Name())
 			}
 
-			if err = mw.ReadImage(srcPath + "/" + fi.Name()); err != nil {
-				return err
-			}
-
-			// skipList に入っていたらモノクロ化しない
-			// skipList の値は 1 起算を考慮
-			isSkip := false
-			for _, v := range skipList {
-				if v == i+1 {
-					isSkip = true
+			if i == 0 {
+				if err = mw.ReadImage(srcPath + "/" + fi.Name()); err != nil {
+					return err
 				}
+			} else {
+				if err = mw.ReadImage(dstPath); err != nil {
+					return err
+				}
+				mw.SetLastIterator()
 			}
+			// if skipMap has the key of the index, this image does not be monochrome.
+			_, isSkip := skipMap[i+1]
 			if err = processImage(mw, isSkip); err != nil {
 				return err
 			}
 
-			// add file
-			mw.SetLastIterator()
-		}
-
-		// write pdf
-		mw.SetImageFormat("pdf")
-		var dstPath string
-		if comicO == "" {
-			dstPath = srcPath + ".pdf"
-		} else if comicO == "-" {
-			if err = mw.WriteImageFile(os.Stdout); err != nil {
-				return err
-			}
-			return nil
-		} else {
-			dstPath = comicO
-		}
-		if _, err := os.Stat(dstPath); os.IsNotExist(err) {
 			if err = mw.WriteImages(dstPath, true); err != nil {
 				return err
 			}
@@ -231,42 +207,67 @@ func processDirectory(srcPath string) error {
 			}
 
 			_, isSkip := skipMap[i+1]
-
 			if err = processImage(mw, isSkip); err != nil {
 				return err
 			}
 
+			if _, err := os.Stat(comicO); err != nil {
+				if err = os.Mkdir(comicO, 0755); err != nil {
+					return err
+				}
+			}
+			dstPath := getDestImagePath(srcPath+"/"+fi.Name(), comicO, comicE, true)
 			// write file
-			var dstPath string
-			if comicO == "" {
-				dstPath = srcPath + "/" + fi.Name()
-			} else if comicO == "-" {
+			if dstPath == "-" {
 				if err = mw.WriteImageFile(os.Stdout); err != nil {
 					return err
 				}
-				continue
 			} else {
-				if _, err := os.Stat(comicO); os.IsNotExist(err) {
-					if err = os.Mkdir(comicO, 0755); err != nil {
-						return err
-					}
+				if err = mw.WriteImage(dstPath); err != nil {
+					return err
 				}
-				dstPath = comicO + "/" + fi.Name()
-			}
-			pos := strings.LastIndex(dstPath, ".")
-			if pos == -1 {
-				dstPath = dstPath + comicE
-			} else {
-				dstPath = dstPath[:pos+1] + comicE
-			}
-			if err = mw.WriteImage(dstPath); err != nil {
-				return err
 			}
 
+			mw.Destroy()
 		}
 	}
 
 	return nil
+}
+
+// srcPath is image source path.
+// output is symbol to be based to determinate destination path.
+// ext is file name extension.
+// if output is directory, then isDir is true, else false.
+func getDestImagePath(srcPath, output, ext string, isDir bool) string {
+	var dstPath string
+
+	if output == "" {
+		pos := strings.LastIndex(srcPath, ".")
+		if pos == -1 {
+			dstPath = srcPath + "." + ext
+		} else {
+			dstPath = srcPath[:pos+1] + ext
+		}
+	} else {
+		if isDir {
+			s := strings.Split(srcPath, "/")
+			filename := s[len(s)-1]
+
+			pos := strings.LastIndex(filename, ".")
+			if pos == -1 {
+				filename = filename + "." + ext
+			} else {
+				filename = filename[:pos+1] + ext
+			}
+
+			dstPath = output + "/" + filename
+		} else {
+			dstPath = output
+		}
+	}
+
+	return dstPath
 }
 
 func processImage(mw *imagick.MagickWand, monoSkip bool) error {
@@ -276,7 +277,7 @@ func processImage(mw *imagick.MagickWand, monoSkip bool) error {
 			return err
 		}
 	}
-	if err = resizeImage(mw); err != nil {
+	if err = resizeImage(mw, comicH, comicE); err != nil {
 		return err
 	}
 
@@ -284,21 +285,21 @@ func processImage(mw *imagick.MagickWand, monoSkip bool) error {
 
 }
 
-// - イメージのリサイズ
-// - 拡張子の変更
-func resizeImage(mw *imagick.MagickWand) error {
+// resizeImage does below:
+// - resize the image
+// - change file format
+func resizeImage(mw *imagick.MagickWand, height int, format string) error {
 	var err error
-	if err = mw.SetImageFormat(comicE); err != nil {
+	if err = mw.SetImageFormat(format); err != nil {
 		return err
 	}
 
 	var h, w uint
-	if comicH < 0 {
+	if height < 0 {
 		return nil
-	} else {
-		h = uint(comicH)
-		w = uint((float64(h) / float64(mw.GetImageHeight())) * float64(mw.GetImageWidth()))
 	}
+	h = uint(height)
+	w = uint((float64(h) / float64(mw.GetImageHeight())) * float64(mw.GetImageWidth()))
 
 	if comicV {
 		fmt.Printf("Image size: %d x %d(SRC) -> %d x %d(DST)\n", mw.GetImageWidth(), mw.GetImageHeight(), w, h)
@@ -312,9 +313,10 @@ func resizeImage(mw *imagick.MagickWand) error {
 
 }
 
-// - モノクロ化
-// - Red Channel でグレースケール化
-// - 色レベル補正 (裏写り軽減、シャープネス化)
+// monochromeImage does below:
+// - monochrome image
+//   - grayscale by Red Channel because yellow tint has few red element
+// - compensate color level for mitigating show-through and sharpness
 func monochromeImage(mw *imagick.MagickWand, bp, wp float64) error {
 	var err error
 	// remove yellow tint
