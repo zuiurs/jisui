@@ -4,13 +4,14 @@ import (
 	"C"
 	"flag"
 	"fmt"
-	"github.com/zuiurs/jisui/subcommand"
-	"gopkg.in/gographics/imagick.v2/imagick"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/zuiurs/jisui/subcommand"
+	"gopkg.in/gographics/imagick.v2/imagick"
 )
 
 const (
