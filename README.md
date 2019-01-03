@@ -335,6 +335,15 @@ for i in $(seq <巻数>); do mkdir <title>_$i; done
 - ディレクトリ処理時に毎回 ImageWand を生成する必要はある？
   - PDF みたいに `WriteImages()` の `adjoin` を `false` にしたら一枚一枚書き込んでくれる？ (未検証)
 
+- iPad Pro で見る用のカラーの参考書をやる場合は pdf 化はせずにディレクトリに画像を書き出す
+  - pdf の場合逐次書き込みができないので、ページが大量だとメモリが足りなくなってしまう
+  - ディレクトリに書き出したファイルに対して `pngquant` で最適化処理をかけてから通常の convert コマンドで pdf にまとめるのが良い
+    - `.\pngquant.exe --ext .png --force --speed 1 .\output\*`
+    - https://pngquant.org/
+  - convert もメモリをバカ食いするのでマシンパワーの高いやつでやったほうが良い
+    - `convert output/page-* book.pdf`
+  - いずれどうにかしたい
+
 ## About /scripts
 
 昔使っていた自炊用のシェルスクリプトです．Go のツールがあるため今はほとんど使いません．
