@@ -168,22 +168,14 @@ func processDirectory(srcPath string) error {
 	if comicPack {
 		mw := imagick.NewMagickWand()
 		mw.SetImageFormat("pdf")
-		dstPath := getDestImagePath(srcPath, comicO, "pdf", false)
 
 		for i, fi := range fis {
 			if comicV {
 				fmt.Printf("%s processing...\n", fi.Name())
 			}
 
-			if i == 0 {
-				if err = mw.ReadImage(srcPath + "/" + fi.Name()); err != nil {
-					return err
-				}
-			} else {
-				if err = mw.ReadImage(dstPath); err != nil {
-					return err
-				}
-				mw.SetLastIterator()
+			if err = mw.ReadImage(srcPath + "/" + fi.Name()); err != nil {
+				return err
 			}
 			// if skipMap has the key of the index, this image does not be monochrome.
 			_, isSkip := skipMap[i+1]
@@ -191,6 +183,11 @@ func processDirectory(srcPath string) error {
 				return err
 			}
 
+			mw.SetLastIterator()
+		}
+
+		dstPath := getDestImagePath(srcPath, comicO, "pdf", false)
+		if _, err := os.Stat(dstPath); err != nil {
 			if err = mw.WriteImages(dstPath, true); err != nil {
 				return err
 			}
