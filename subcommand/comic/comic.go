@@ -43,7 +43,7 @@ func Run(args []string) error {
 	f.BoolVar(&comicV, "v", false, "verbose output")
 	f.StringVar(&comicO, "o", "", "set output destination")
 	f.StringVar(&comicE, "e", "png", "set output file extension")
-	f.IntVar(&comicH, "h", -1, "set image height (iPad Air2: 2048x1536)")
+	f.IntVar(&comicH, "h", -1, "set image height (iPad Air2: 2048x1536, iPad Pro: 2732x2048)")
 	f.Float64Var(&comicBP, "bp", BP, "set leveling black point")
 	f.Float64Var(&comicWP, "wp", WP, "set leveling white point")
 	f.BoolVar(&comicPack, "pack", false, "packing images to PDF")
