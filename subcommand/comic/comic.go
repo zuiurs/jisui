@@ -35,7 +35,7 @@ var (
 	comicOverwrite bool
 	comicSkip      string
 
-	skipList []int
+	skipMap map[int]bool
 )
 
 func Run(args []string) error {
@@ -48,7 +48,7 @@ func Run(args []string) error {
 	f.Float64Var(&comicWP, "wp", WP, "set leveling white point")
 	f.BoolVar(&comicPack, "pack", false, "packing images to PDF")
 	f.BoolVar(&comicOverwrite, "overwrite", false, "overwrite the file or directory")
-	f.StringVar(&comicSkip, "skip", "", "set number of image skipping monochrome process (for color page)")
+	f.StringVar(&comicSkip, "skip", "", "set one-based number of image skipping monochrome process (for color page)")
 	f.Parse(args)
 
 	if len(f.Args()) == 0 {
@@ -64,14 +64,14 @@ func Run(args []string) error {
 	}
 	comicO = strings.TrimRight(comicO, "/")
 
-	// skip パース処理
+	// parse skip list
 	var err error
-	skipList, err = parseSkipList(comicSkip)
+	skipMap, err = parseSkipList(comicSkip)
 	if err != nil {
 		return err
 	}
 	if comicV {
-		fmt.Printf("Skip Image Index: %v\n", skipList)
+		fmt.Printf("Skip Image Index: %v\n", skipMap)
 	}
 
 	imagick.Initialize()
@@ -102,8 +102,10 @@ func Run(args []string) error {
 	return nil
 }
 
-func parseSkipList(str string) ([]int, error) {
-	result := make([]int, 0, 10)
+// "1,3-5,6,8-9"
+// -> 1, 3, 4 , 5, 6, 8, 9
+func parseSkipList(str string) (map[int]bool, error) {
+	result := make(map[int]bool)
 	s := strings.Split(str, ",")
 	for _, v := range s {
 		if strings.ContainsAny(v, "-") {
@@ -117,14 +119,14 @@ func parseSkipList(str string) ([]int, error) {
 				return nil, err
 			}
 			for i := fromIdx; i <= toIdx; i++ {
-				result = append(result, i)
+				result[i] = true
 			}
 		} else {
 			idx, err := strconv.Atoi(v)
 			if err != nil {
 				return nil, err
 			}
-			result = append(result, idx)
+			result[idx] = true
 		}
 	}
 	return result, nil
@@ -228,12 +230,8 @@ func processDirectory(srcPath string) error {
 				return err
 			}
 
-			isSkip := false
-			for _, v := range skipList {
-				if v == i+1 {
-					isSkip = true
-				}
-			}
+			_, isSkip := skipMap[i+1]
+
 			if err = processImage(mw, isSkip); err != nil {
 				return err
 			}
